@@ -2,9 +2,9 @@ name: "build"
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     # Run hourly, at minute 0. This is when the cache key changes, and
     # so this will ensure the new cache entry is generated on the master branch,
@@ -42,8 +42,6 @@ jobs:
         restore-keys: |
           ${{ matrix.bazelcmd }}-${{ runner.os }}-${{ hashFiles('**/*_deps.bzl', '.bazelrc') }}
           ${{ matrix.bazelcmd }}-${{ runner.os }}-
-    - name: Install system dependencies
-      run: ./install_dependencies.sh
 
     - name: Install bazelisk
       run: |

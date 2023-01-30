@@ -18,8 +18,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def gnpsi_deps():
     """Declare the third-party dependencies necessary to build gnpsi"""
-
-     if not native.existing_rule("com_github_grpc_grpc"):
+    if not native.existing_rule("com_github_grpc_grpc"):
         http_archive(
             name = "com_github_grpc_grpc",
             url = "https://github.com/grpc/grpc/archive/refs/tags/v1.43.2.tar.gz",

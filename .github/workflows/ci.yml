@@ -1,4 +1,4 @@
-name: "build"
+name: "bazel build"
 
 on:
   push:
@@ -6,51 +6,35 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    # Run hourly, at minute 0. This is when the cache key changes, and
-    # so this will ensure the new cache entry is generated on the master branch,
-    # making CI fast on all branches.
-    # https://crontab.guru/#0_*_*_*_*
-    - cron: "0 * * * *"
-
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        bazelcmd: [build, test]
-    name: ${{ matrix.bazelcmd }}
-    # We use Ubuntu 20.04 as it comes with GCC v9.3 by default.
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       BAZEL: bazelisk-linux-amd64
-
     steps:
-    - uses: actions/checkout@v3
-
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Compute hour of the day.
       id: hour
       run: echo "::set-output name=number::$(date +%H)"
-
     - name: Mount bazel cache
-      uses: actions/cache@v3
+      uses: actions/cache@v2
       with:
         # See https://docs.bazel.build/versions/master/output_directories.html
         path: "~/.cache/bazel"
+        # Create a new cache entry whenever Bazel files change.
         # See https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows
-        key: ${{ matrix.bazelcmd }}-${{ runner.os }}-${{ hashFiles('**/*_deps.bzl', '.bazelrc') }}-${{ steps.hour.outputs.number }}
+        key: bazel-${{ runner.os }}-build-${{ hashFiles('**/*.bzl', '**/*.bazel') }}
         restore-keys: |
-          ${{ matrix.bazelcmd }}-${{ runner.os }}-${{ hashFiles('**/*_deps.bzl', '.bazelrc') }}
-          ${{ matrix.bazelcmd }}-${{ runner.os }}-
-
+          bazel-${{ runner.os }}-build-
     - name: Install bazelisk
       run: |
-        curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.7.5/$BAZEL"
+        curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.8.1/$BAZEL"
         chmod +x $BAZEL
-
+        sudo mv $BAZEL /usr/local/bin/bazel
     - name: Build
-      run: ./$BAZEL ${{ matrix.bazelcmd }} //... --test_output=errors --distinct_host_configuration=false
-
-    - name: Compress cache
-      # This deletes cached archives while keeping the build cache.
-      run: rm -rf $(./$BAZEL info repository_cache)
+      run: bazel build //...

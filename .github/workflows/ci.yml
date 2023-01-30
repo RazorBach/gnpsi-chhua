@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BAZEL: bazelisk-linux-amd64
+    steps:
+    - uses: actions/checkout@v2
     - name: Compute hour of the day.
       id: hour
       run: echo "::set-output name=number::$(date +%H)"
